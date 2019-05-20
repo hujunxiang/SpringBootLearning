@@ -44,8 +44,8 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        
     配置application.properties文件内容
-    
         debug=false
         # running on port 8081
         server.port=8081
@@ -60,6 +60,7 @@
         spring.datasource.password=root
         #not allow for lazy loading in web views
         spring.jpa.open-in-view=false
+        
     创建entity
         @Entity
         @Data
@@ -79,12 +80,14 @@
              */
             private String email;
         }
+        
     创建dao
         @Repository
         public interface AccountDao extends JpaRepository<Account,Integer> {
             @Query("from Account where id = ?1")
             Account findAccountById(int id);
         }
+        
     创建service
         @Service
         @Transactional
@@ -104,6 +107,7 @@
                 accountDao.deleteById(id);
             }
         }
+        
     创建Controller
         @RestController
         @RequestMapping("test")
