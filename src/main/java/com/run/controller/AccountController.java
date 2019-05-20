@@ -1,5 +1,6 @@
 package com.run.controller;
 
+import com.github.pagehelper.PageHelper;
 import com.run.model.Account;
 import com.run.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,26 +54,22 @@ public class AccountController {
      * @return
      */
     @RequestMapping(value = "initAccount/{index}", method = RequestMethod.GET)
-    public String initAccount(@PathVariable int index) {
-        List<Integer> idList = new LinkedList<>();
+    public List<Account> initAccount(@PathVariable int index) {
+        List<Account> accountList = new LinkedList<>();
         for (int i = index; i < index + 100; i++) {
             Account account = new Account();
             account.setName("张三" + i);
             account.setEmail("90598269" + i + "@qq.com");
             accountService.saveAccount(account);
-            idList.add(account.getId());
+            accountList.add(account);
         }
-        return idList.toString();
+        return accountList;
     }
 
     @RequestMapping("findAccountById")
-    public String findAccountById(int id) {
+    public Account findAccountById(int id) {
         Account account = accountService.findAccountById(id);
-        if (StringUtils.isEmpty(account)) {
-            return "can not find record by id = " + id;
-        } else {
-            return account.getId().toString();
-        }
+        return null;
     }
 
     @RequestMapping("deleteAccountById")
@@ -85,5 +82,28 @@ public class AccountController {
             e.printStackTrace();
         }
         return flag;
+    }
+
+    /**
+     * 使用mybatis查询单条记录
+     *
+     * @param id
+     * @return
+     */
+    @RequestMapping("findAccountByIdUseMyBatis/{id}")
+    public Account findAccountByIdUseMyBatis(@PathVariable int id) {
+        return accountService.findAccountByIdUseMyBatis(id);
+    }
+
+    /**
+     * 使用PageHelper进行分页查询
+     *
+     * @param pageSize
+     * @param pageNum
+     * @return
+     */
+    @RequestMapping("findAccountList")
+    public List<Account> findAccountList(int pageSize, int pageNum,Account account) {
+        return accountService.findAccountList(pageSize, pageNum, account);
     }
 }
