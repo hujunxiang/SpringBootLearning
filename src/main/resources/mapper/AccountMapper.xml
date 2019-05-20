@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.run.mapper.AccountMapper">
+    <select id="findAccountById" parameterType="Integer" resultType="com.run.model.Account">
+        select id , name ,email from account where id = #{id}
+    </select>
+    <select id="findAccountByConditions" parameterType="com.run.model.Account" resultType="com.run.model.Account">
+        select id , name ,email from account where 1 = 1
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+        <if test="name != null and name != ''">
+            and name like '%'||#{name}||'%'
+        </if>
+        <if test="email != null and email != ''">
+            and email = #{email}
+        </if>
+    </select>
+</mapper>
