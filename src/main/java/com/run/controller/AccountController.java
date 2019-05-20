@@ -3,17 +3,16 @@ package com.run.controller;
 import com.run.model.Account;
 import com.run.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Controller层
@@ -33,6 +32,19 @@ public class AccountController {
     @RequestMapping("getAllAccount")
     public List<Account> getAllAccount() {
         return accountService.getAllAccount();
+    }
+
+    /**
+     * 分页查询
+     *
+     * @param pageSize 每页大小
+     * @param pageNum  第几页
+     * @return
+     */
+    @RequestMapping("findAccountByConditions")
+    public Page<Account> findAccountByConditions(@RequestParam(value = "pageSize", defaultValue = "10", required = true) int pageSize,
+                                                 @RequestParam(value = "pageNum", defaultValue = "0", required = true) int pageNum) {
+        return accountService.findAccountByConditions(pageNum, pageSize);
     }
 
     /**
