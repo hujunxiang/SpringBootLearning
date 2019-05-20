@@ -17,8 +17,8 @@
         (ff).将分支推送到GitHub，执行： git push origin springboot_mybatis
         (gg).删除本地分支，执行：git branch -d springboot_mybatis
         (hh).删除GitHub上的分支，执行：git push origin:springboot_mybatis
-    (3).在pom.xml文件中添加相关依赖
-    
+        
+在pom.xml文件中添加相关依赖
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -44,7 +44,4 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-2.集成mybatis
     
-    
-    (2).
