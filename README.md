@@ -106,6 +106,11 @@
             public void deleteAccountById(Integer id) {
                 accountDao.deleteById(id);
             }
+            public Page<Account> findAccountByConditions(int pageNum, int pageSize) {
+                Pageable page = PageRequest.of(pageNum,pageSize);
+                Page<Account> result = accountDao.findAll(page);
+                return result;
+            }
         }
         
     创建Controller
@@ -122,6 +127,19 @@
             @RequestMapping("getAllAccount")
             public List<Account> getAllAccount() {
                 return accountService.getAllAccount();
+            }
+            /**
+             * 分页查询
+             *
+             * @param pageSize 每页大小
+             * @param pageNum  第几页
+             * @return
+             */
+            @RequestMapping("findAccountByConditions")
+            public Page<Account> findAccountByConditions(
+                @RequestParam(value = "pageSize", defaultValue = "10", required = true) int pageSize,
+                @RequestParam(value = "pageNum", defaultValue = "0", required = true) int pageNum) {
+                    return accountService.findAccountByConditions(pageNum, pageSize);
             }
             /**
              * 初始化account信息
