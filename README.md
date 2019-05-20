@@ -45,6 +45,7 @@
             <optional>true</optional>
         </dependency>
     配置application.properties文件内容
+    
         debug=false
         # running on port 8081
         server.port=8081
@@ -59,3 +60,100 @@
         spring.datasource.password=root
         #not allow for lazy loading in web views
         spring.jpa.open-in-view=false
+    创建entity
+        @Entity
+        @Data
+        public class Account {
+            /**
+             * 主键
+             */
+            @Id
+            @GeneratedValue(strategy=GenerationType.AUTO)
+            private Integer id;
+            /**
+             * 姓名
+             */
+            private String name;
+            /**
+             * 邮箱
+             */
+            private String email;
+        }
+    创建dao
+        @Repository
+        public interface AccountDao extends JpaRepository<Account,Integer> {
+            @Query("from Account where id = ?1")
+            Account findAccountById(int id);
+        }
+    创建service
+        @Service
+        @Transactional
+        public class AccountService {
+            @Autowired
+            private AccountDao accountDao;
+            public List<Account> getAllAccount() {
+                return accountDao.findAll();
+            }
+            public int saveAccount(Account account) {
+                return accountDao.save(account).getId();
+            }
+            public Account findAccountById(int id) {
+                return accountDao.findAccountById(id);
+            }
+            public void deleteAccountById(Integer id) {
+                accountDao.deleteById(id);
+            }
+        }
+    创建Controller
+        @RestController
+        @RequestMapping("test")
+        public class AccountController {
+            @Autowired
+            private AccountService accountService;
+            /**
+             * 获取所有account信息
+             *
+             * @return
+             */
+            @RequestMapping("getAllAccount")
+            public List<Account> getAllAccount() {
+                return accountService.getAllAccount();
+            }
+            /**
+             * 初始化account信息
+             *
+             * @return
+             */
+            @RequestMapping(value = "initAccount/{index}", method = RequestMethod.GET)
+            public String initAccount(@PathVariable int index) {
+                List<Integer> idList = new LinkedList<>();
+                for (int i = index; i < index + 100; i++) {
+                    Account account = new Account();
+                    account.setName("张三" + i);
+                    account.setEmail("90598269" + i + "@qq.com");
+                    accountService.saveAccount(account);
+                    idList.add(account.getId());
+                }
+                return idList.toString();
+            }
+            @RequestMapping("findAccountById")
+            public String findAccountById(int id) {
+                Account account = accountService.findAccountById(id);
+                if (StringUtils.isEmpty(account)) {
+                    return "can not find record by id = " + id;
+                } else {
+                    return account.getId().toString();
+                }
+            }
+            @RequestMapping("deleteAccountById")
+            public String deleteAccountById(int id) {
+                String flag = "success";
+                try {
+                    accountService.deleteAccountById(id);
+                } catch (Exception e) {
+                    flag = "fail";
+                    e.printStackTrace();
+                }
+                return flag;
+            }
+        }
