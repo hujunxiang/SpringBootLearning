@@ -180,9 +180,8 @@
         }
 
 # 集成mybatis
-个人见解：springboot框架中本身可以使用jpa进行增、删、改、查，但是由于在复杂查询的时候，使用jpa查询会写很多代码，而且维护起来不太方便，所以引入mybatis
-进行复杂查询，毕竟是在xml文件中写native sql，这给后期优化查询sql带来极大便利。所以建议mybatis只做复杂查询，jpa做增、删、改及简单查询。这样也可以避免数据库事务的
-多重复杂配置。
+个人见解：springboot框架中本身可以使用jpa进行增、删、改、查，但是由于在复杂查询的时候，使用jpa查询会写很多代码，而且维护起来不太方便，所以引入mybatis进行复杂查询，毕竟是在xml文件中写native sql，这给后期优化查询sql带来极大便利。所以建议mybatis只做复杂查询，jpa做增、删、改及简单查询。
+这样也可以避免数据库事务的多重复杂配置。
 
  
 1.pom.xml文件引入依赖
@@ -303,7 +302,8 @@
         public void doAfter(JoinPoint joinPoint) {
             try {
                 logger.info("start record log ...");
-                HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+                HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.
+                    getRequestAttributes()).getRequest();
                 SystemLog log = new SystemLog();
                 log = getControllerMethodDescription(joinPoint, request, log);
                 systemLogDao.save(log);
@@ -314,7 +314,9 @@
             }
         }
     
-        public static SystemLog getControllerMethodDescription(JoinPoint joinPoint, HttpServletRequest request, SystemLog log) throws Exception {
+        public static SystemLog getControllerMethodDescription(JoinPoint joinPoint, 
+                HttpServletRequest request, SystemLog log) 
+            throws Exception {
             String targetName = joinPoint.getTarget().getClass().getName();
             String methodName = joinPoint.getSignature().getName();
             Object[] arguments = joinPoint.getArgs();
@@ -440,8 +442,9 @@
          */
         @RequestMapping("findAccountByConditions")
         @AopLog(moduleName = "查询Account列表",description = "分页查询列表信息",operType = OptType.QUERY)
-        public Page<Account> findAccountByConditions(@RequestParam(value = "pageSize", defaultValue = "10", required = true) int pageSize,
-                                                     @RequestParam(value = "pageNum", defaultValue = "0", required = true) int pageNum) {
+        public Page<Account> findAccountByConditions(
+            @RequestParam(value = "pageSize", defaultValue = "10", required = true) int pageSize,
+            @RequestParam(value = "pageNum", defaultValue = "0", required = true) int pageNum) {
             return accountService.findAccountByConditions(pageNum, pageSize);
         }
        	 
