@@ -1,6 +1,8 @@
 package com.run.controller;
 
 import com.github.pagehelper.PageHelper;
+import com.run.aop.AopLog;
+import com.run.aop.OptType;
 import com.run.model.Account;
 import com.run.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +45,7 @@ public class AccountController {
      * @return
      */
     @RequestMapping("findAccountByConditions")
+    @AopLog(moduleName = "查询Account列表",description = "分页查询列表信息",operType = OptType.QUERY)
     public Page<Account> findAccountByConditions(@RequestParam(value = "pageSize", defaultValue = "10", required = true) int pageSize,
                                                  @RequestParam(value = "pageNum", defaultValue = "0", required = true) int pageNum) {
         return accountService.findAccountByConditions(pageNum, pageSize);

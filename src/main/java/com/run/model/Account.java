@@ -6,13 +6,14 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import java.io.Serializable;
 
 /**
  * Account实体类
  */
 @Entity
 @Data
-public class Account {
+public class Account implements Serializable {
     /**
      * 主键
      */
