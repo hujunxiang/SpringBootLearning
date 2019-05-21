@@ -1,4 +1,4 @@
-1.搭建springboot环境（使用mysql数据库）
+# 搭建springboot环境（使用mysql数据库）
 
     (1).在GitHub上创建repository
     (2).在本地用idea创建项目，然后上传到GitHub
