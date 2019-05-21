@@ -1,5 +1,6 @@
 package com.run.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -8,6 +9,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.io.Serializable;
+import java.util.Date;
 
 @Entity
 @Data
@@ -35,22 +37,25 @@ public class SystemLog implements Serializable {
      */
     @Column(name = "opt_type",length = 10)
     private String optType;
-
     /**
      * ip
      */
     @Column(name = "ip",length = 20)
     private String ip;
-
     /**
      * 方法名称
      */
     @Column(name = "method_url",length = 100)
     private String methodUrl;
-
     /**
      * 参数
      */
     @Column(name = "params",length = 200)
     private String params;
+    /**
+     * 创建时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "create_date")
+    private Date createDate;
 }

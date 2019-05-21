@@ -21,6 +21,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -87,6 +88,7 @@ public class AopLogAspect {
         log.setDescription(description);
         log.setOptType(optType);
         log.setModuleName(moduleName);
+        log.setCreateDate(new Date());
         return log;
     }
 }
