@@ -5,6 +5,8 @@ import com.run.aop.AopLog;
 import com.run.aop.OptType;
 import com.run.model.Account;
 import com.run.service.AccountService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +25,7 @@ import java.util.*;
 @RestController
 @RequestMapping("test")
 public class AccountController {
+    private static Logger logger = LoggerFactory.getLogger(AccountController.class);
 
     @Autowired
     private AccountService accountService;

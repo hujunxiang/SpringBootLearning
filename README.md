@@ -445,3 +445,200 @@
             return accountService.findAccountByConditions(pageNum, pageSize);
         }
        	 
+# 集成redis
+
+  1.pom.xml文件中添加依赖：
+    
+    <!-- import redis-->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+        <version>2.1.5.RELEASE</version>
+    </dependency> 
+    
+  2.application.properties文件中添加配置项：
+  
+        #redis
+        spring.redis.database=0
+        spring.redis.host=127.0.0.1
+        spring.redis.port=6379
+        spring.redis.password=
+        spring.redis.jedis.pool.max-wait=-1ms
+        spring.redis.jedis.pool.max-idle=8
+        spring.redis.jedis.pool.min-idle=0
+        spring.redis.timeout=1800
+  3.修改启动入口类DemoApplication，添加上@EnableCaching，开启缓存功能
+  
+  4.编写redis配置类：
+  
+        /**
+         * Redis缓存配置类
+         */
+        @Configuration
+        @EnableCaching//开启缓存功能
+        @EnableTransactionManagement//开启事务
+        public class RedisConfig extends CachingConfigurerSupport {
+        
+            private static Logger logger = LoggerFactory.getLogger(RedisConfig.class);
+        
+            @Value("${spring.redis.host}")
+            private String host;
+            @Value("${spring.redis.port}")
+            private String port;
+            @Value("${spring.redis.timeout}")
+            private int timeout;
+        
+            /**
+             * RedisTemplate 对象
+             *
+             * @param factory
+             * @return
+             */
+            @Bean
+            @ConditionalOnMissingBean
+            public RedisTemplate redisTemplate(RedisConnectionFactory factory) {
+                logger.info(">>>>>>>>>>>>>rebuild redisTemplate  ...");
+                RedisTemplate template = new RedisTemplate();
+                template.setConnectionFactory(factory);
+                Jackson2JsonRedisSerializer serializer = new Jackson2JsonRedisSerializer(Object.class);
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+                mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+                serializer.setObjectMapper(mapper);
+                StringRedisSerializer redisSerializer = new StringRedisSerializer();
+                //key采用String的序列化方式
+                template.setKeySerializer(redisSerializer);
+                //hash的key也采用String的序列化方式
+                template.setHashKeySerializer(redisSerializer);
+                //value序列化方式采用jackson
+                template.setValueSerializer(redisSerializer);
+                //hash的value序列化方式采用jackson
+                template.setHashValueSerializer(redisSerializer);
+                template.afterPropertiesSet();
+                return template;
+            }
+        
+            /**
+             * 缓存管理器
+             *
+             * @param factory
+             * @return
+             */
+            @Bean
+            public CacheManager cacheManager(RedisConnectionFactory factory) {
+                RedisSerializer<String> redisSerializer = new StringRedisSerializer();
+                Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+                //解决查询缓存转换异常的问题
+                ObjectMapper om = new ObjectMapper();
+                om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+                om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+                jackson2JsonRedisSerializer.setObjectMapper(om);
+                // 配置序列化（解决乱码的问题）
+                RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                        //设置缓存管理器管理的缓存的默认过期时间
+                        .entryTtl(Duration.ofSeconds(timeout))
+                        //设置 key为string序列化
+                        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer))
+                        //设置value为json序列化
+                        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
+                        //不缓存空值
+                        .disableCachingNullValues();
+                RedisCacheManager cacheManager = RedisCacheManager.builder(factory)
+                        .cacheDefaults(config)
+                        .build();
+                return cacheManager;
+            }
+        
+            /**
+             * 自定义的缓存key生成策略：方法名
+             * 此处需要注意，如果加参数名，则controller层传参数不能使用@PathVariable注解传值，
+             * 否则得到的是参数值而不是参数名称
+             *
+             * @return
+             */
+            @Bean
+            public KeyGenerator keyGenerator() {
+                return new KeyGenerator() {
+                    @Override
+                    public Object generate(Object target, Method method, Object... params) {
+                        StringBuilder sb = new StringBuilder();
+        //                sb.append(target.getClass().getName());
+                        sb.append(method.getName());
+        //                for(Object obj:params){
+        //                    sb.append(obj.toString());
+        //                }
+                        logger.info(">>>>>>>>>>>>>rebuild keyGenerator ...");
+                        logger.info(">>>>>>>>>>>>>cache key is :" + sb.toString());
+                        return sb.toString();
+                    }
+                };
+            }
+        }
+        
+  5.redis工具类：RedisUtils
+  
+  6.在dao层或者service层使用@Cacheable或者@CacheEvict注解
+    
+    dao层使用：
+    
+    @Query("from Account where name like concat('%',?1,'%') ")
+    @Cacheable(value = "myCache")
+    //将查询结果缓存到redis中
+    List<Account> getAccountListFormRedisOrDB(String name, String email);
+
+    @Query("from Account where name like concat('%',?1,'%') ")
+    @Cacheable(value = "myCache", key = "#p0")
+    //将查询结果缓存到redis中，（key="#p0"）指定传入的第一个参数作为redis的key。
+    List<Account> getAccountListFormRedisOrDBByName(String name);
+
+    @Query("from Account where email like concat('%',?1,'%') ")
+    @CacheEvict(value = "myCache")
+    //用来标注在需要清除缓存元素的方法或类上的
+    List<Account> getAccountListFormRedisOrDBByEmail(String email);
+  
+  7.controller层调用：
+  
+    @RestController
+    @RequestMapping("redis")
+    public class RedisController {
+        private static Logger logger = LoggerFactory.getLogger(RedisController.class);
+    
+        @Autowired
+        private RedisUtils redisUtils;
+        @Autowired
+        private AccountService accountService;
+    
+        @RequestMapping("setInfo2Redis/{key}/{value}")
+        public String setInfo2Redis(@PathVariable String key, @PathVariable String value) {
+            redisUtils.set(key, value);
+            return redisUtils.get(key) + ":" + value;
+        }
+    
+        @RequestMapping("getInfoFromRedisByKey/{key}")
+        public String getInfoFromRedisByKey(@PathVariable String key) {
+            return "key:" + redisUtils.get(key);
+        }
+    
+        @RequestMapping("delInfoFromRedisByKeys/{key}")
+        public boolean delInfoFromRedisByKeys(@PathVariable String key) {
+            return redisUtils.deleteByKeys(key);
+        }
+    
+        @RequestMapping("getAccountListFormRedisOrDB/{name}/{email}")
+        public List<Account> getAccountListFormRedisOrDB(@PathVariable String name, @PathVariable String email) {
+            return accountService.getAccountListFormRedisOrDB(name, email);
+        }
+    
+        @RequestMapping("getAccountListFormRedisOrDBByName")
+        public List<Account> getAccountListFormRedisOrDBByName(String name) {
+            return accountService.getAccountListFormRedisOrDBByName(name);
+        }
+    
+        @RequestMapping("getAccountListFormRedisOrDBByEmail")
+        public List<Account> getAccountListFormRedisOrDBByEmail(String email) {
+            return accountService.getAccountListFormRedisOrDBByEmail(email);
+        }
+    }      
+        
+  8.可以查看打印日志，如果有查询 sql输出则表示查询数据库数据，如果没有则表示查询的是redis缓存数据。也可以
+  通过使用RedisClient工具进行查看缓存中的数据信息。

@@ -1,7 +1,6 @@
 package com.run.service;
 
 import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import com.run.dao.AccountDao;
 import com.run.mapper.AccountMapper;
 import com.run.model.Account;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service层
@@ -55,5 +53,17 @@ public class AccountService {
         page.setReasonable(true);//设置合理化
         accountMapper.findAccountByConditions(account);
         return page.getResult();
+    }
+
+    public List<Account> getAccountListFormRedisOrDB(String name, String email) {
+        return accountDao.getAccountListFormRedisOrDB(name, email);
+    }
+
+    public List<Account> getAccountListFormRedisOrDBByName(String name) {
+        return accountDao.getAccountListFormRedisOrDBByName(name);
+    }
+
+    public List<Account> getAccountListFormRedisOrDBByEmail(String email) {
+        return accountDao.getAccountListFormRedisOrDBByEmail(email);
     }
 }

@@ -1,6 +1,5 @@
 package com.run.aop;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.run.dao.SystemLogDao;
 import com.run.model.SystemLog;
 import com.run.utils.CommonUtils;
@@ -11,7 +10,6 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
@@ -19,7 +17,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
