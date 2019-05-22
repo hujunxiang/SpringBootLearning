@@ -645,3 +645,138 @@
         
   8.可以查看打印日志，如果有查询 sql输出则表示查询数据库数据，如果没有则表示查询的是redis缓存数据。也可以
   通过使用RedisClient工具进行查看缓存中的数据信息。
+  
+# 集成ActiveMQ
+
+    将从mq中获取的数据持久化到mysql数据库中
+
+  1.pom.xml文件中引入依赖
+  
+    <!-- import activemq -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-activemq</artifactId>
+        <version>2.1.5.RELEASE</version>
+    </dependency>
+  2.application.properties文件中添加activemq的配置项
+  
+    #activemq
+    spring.activemq.broker-url=tcp://127.0.0.1:61616
+    spring.activemq.user=admin
+    spring.activemq.password=admin
+    activemq.queue.name=myQueue
+    activemq.topic.name=myTopic
+  3.创建生产者类：
+  
+    @Component
+    public class ActiveMQProducer {
+    
+        @Autowired
+        private JmsTemplate jmsTemplate;
+    
+        @Value("${activemq.queue.name}")
+        private String queueName;
+    
+        @Value("${activemq.topic.name}")
+        private String topicName;
+    
+        /**
+         * 发送消息
+         *
+         * @param isUseQueue 发生消息类型，true时使用queue，false时使用topic
+         * @param message    待发送的消息
+         */
+        public void sendMessage(boolean isUseQueue, final String message) {
+            Destination destination = null;
+            if (isUseQueue) {
+                destination = new ActiveMQQueue(queueName);
+            } else {
+                destination = new ActiveMQTopic(topicName);
+            }
+            jmsTemplate.setExplicitQosEnabled(true);//默认false，是否开启是否开启 deliveryMode, priority, timeToLive的配置
+            jmsTemplate.setDeliveryMode(1);//设置是否持久化，1非持久化，2,持久化，默认2
+            jmsTemplate.setTimeToLive(5000);//消息过期时间,单位为毫秒
+            jmsTemplate.convertAndSend(destination, message);
+        }
+    }
+  4.创建消费者类：
+  
+    @Component
+    public class ActiveMQConsumer {
+        private static Logger logger = LoggerFactory.getLogger(ActiveMQConsumer.class);
+    
+        @Autowired
+        private SystemLogDao systemLogDao;
+    
+        /**
+         * 接收queue里的消息并持久化到mysql数据库中
+         * @param text
+         */
+        @JmsListener(destination = "myQueue")
+        public void receiveQueueMsg(String text) {
+            logger.info("收到Queue的报文为:" + text);
+            SystemLog log = new SystemLog();
+            log.setDescription(text);
+            log.setCreateDate(new Date());
+            log.setParams(text);
+            log.setMethodUrl("myQueue");
+            log.setOptType(OptType.SAVE);
+            systemLogDao.save(log);
+        }
+    
+        /**
+         * JmsListener注解默认只接收queue消息,如果要接收topic消息,需要设置containerFactory
+         *
+         * @param factory
+         * @return
+         */
+        @Bean
+        public JmsListenerContainerFactory<?> topicContainerFactory(ConnectionFactory factory) {
+            DefaultJmsListenerContainerFactory containerFactory = new DefaultJmsListenerContainerFactory();
+            containerFactory.setPubSubDomain(true);
+            containerFactory.setConnectionFactory(factory);
+            return containerFactory;
+        }
+    
+        /**
+         * 接收topic里的消息并持久化到mysql数据库中
+         * @param text
+         */
+        @JmsListener(destination = "myTopic", containerFactory = "topicContainerFactory")
+        public void receiveTopicMsg(String text) {
+            logger.info("收到Topic的报文为:" + text);
+            SystemLog log = new SystemLog();
+            log.setDescription(text);
+            log.setCreateDate(new Date());
+            log.setParams(text);
+            log.setMethodUrl("myTopic");
+            log.setOptType(OptType.SAVE);
+            systemLogDao.save(log);
+        }
+    }
+  5.在controller层调用：
+  
+    @RestController
+    @RequestMapping("mq")
+    public class ActiveMQController {
+        private static Logger logger = LoggerFactory.getLogger(ActiveMQController.class);
+    
+        @Autowired
+        private ActiveMQProducer producer;
+    
+        @RequestMapping("sendQueueMsg/{num}")
+        public String sendQueueMsg(@PathVariable int num) {
+            for (int i = 0; i < num; i++) {
+                producer.sendMessage(true,"jack count num is :" + i);
+            }
+            return "send queue message to activemq success";
+        }
+    
+        @RequestMapping("sendTopicMsg/{num}")
+        public String sendTopicMsg(@PathVariable int num) {
+            for (int i = 0; i < num; i++) {
+                producer.sendMessage(false,"jack count num is :" + i);
+            }
+            return "send topic message to activemq success";
+        }
+    }
