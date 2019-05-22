@@ -780,3 +780,127 @@
             return "send topic message to activemq success";
         }
     }
+  
+# 集成kafka
+
+        在官网下载安装包，并解压（注意由于是在windows系统环境下，安装包所在路径不要过长，否则在执行相关bat时会报错导致启动失败）
+    kafka安装包中自带zookeeper，所以不用下载zookeeper。到bin/windows目录下：
+        启动服务，
+            先启动zookeeper服务，执行：zookeeper-server-start.bat ../../config/zookeeper.properties
+            再启动kafka服务，执行：kafka-server-start.bat ../../config/server.properties
+        关闭服务：
+            先关闭kafka服务，执行：kafka-server-stop.bat
+            再关闭zookeeper服务，执行：zookeeper-server-stop.bat
+
+    kafka的使用：
+        创建topic：
+            方法一、自动创建
+                kafka-console-producer.bat --broker-list 127.0.0.1:9092 --topic test
+            方法二、创建一个拥有3个副本,1个分区的topic
+                kafka-topics.bat --create --zookeeper 127.0.0.1:2181 --replication-factor 1 -partitions 3 --topic test1
+        删除topic：
+            kafka-topics.bat --delete --zookeeper 127.0.0.1:2181 --topic test
+        查看topic：
+            查看topic列表
+                kafka-topics.bat --zookeeper 127.0.0.1:2181 --list
+            查看topic名称为test对应的具体信息﻿​
+                kafka-topics.bat --describe --zookeeper 127.0.0.1:2181 --topic test
+        启动生产者：
+            kafka-console-producer.bat --broker-list 127.0.0.1:9092 --topic test
+        启动消费者：
+            kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic test --from-beginning
+            
+    kafka可视化工具Kafka Toll下载地址：http://www.kafkatool.com/download.html，或者kafka-manager工具
+    
+  1.pom.xml文件中引入依赖：
+  
+    <!-- import kafka -->
+    <dependency>
+        <groupId>org.springframework.kafka</groupId>
+        <artifactId>spring-kafka</artifactId>
+        <version>2.2.6.RELEASE</version>
+    </dependency>
+  2.application.properties文件中添加配置项：
+  
+    #kafka
+    spring.kafka.bootstrap-servers=localhost:9092
+    spring.kafka.consumer.group-id=myGroup
+  
+  3.创建生产者：
+        
+        @Component
+        public class KafkaProducer {
+            private static Logger logger = LoggerFactory.getLogger(KafkaProducer.class);
+        
+            @Autowired
+            private KafkaTemplate kafkaTemplate;
+        
+            @Value("${spring.kafka.consumer.group-id}")
+            public String topicName;
+        
+            /**
+             * 向kafka发送消息
+             * @param obj
+             */
+            public void sendMsg(Object obj) {
+                logger.info("准备发送消息为：{}", obj.toString());
+                ListenableFuture<SendResult<String, Object>> future = kafkaTemplate.send(topicName, obj);
+                future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
+                    @Override
+                    public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
+                        logger.info(topicName + " - 生产者 发送消息成功：" + stringObjectSendResult.toString());
+                    }
+        
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        logger.info(topicName + " - 生产者 发送消息失败：" + throwable.getMessage());
+                    }
+                });
+            }
+        }
+   
+  4.创建消费者：
+    
+        @Component
+        public class KafkaConsumer {
+            private static Logger logger = LoggerFactory.getLogger(KafkaConsumer.class);
+        
+            /**
+             * 从kafka接受消息
+             * @param record
+             * @param topic
+             */
+            @KafkaListener(topics = "myGroupId", groupId = "myGroupId")
+            public void receiveMsg(ConsumerRecord<?, ?> record, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
+                logger.info("myGroupId start receive msg ...");
+                Optional message = Optional.ofNullable(record.value());
+                if (message.isPresent()) {
+                    Object msg = message.get();
+                    logger.info("被myGroupId消费了：Topic:" + topic + ",Record:" + record + ",Message:" + msg);
+                }
+            }
+        }  
+  5.controller层调用：
+        
+        @RestController
+        @RequestMapping("kafka")
+        public class KafkaController {
+            private static Logger logger = LoggerFactory.getLogger(KafkaController.class);
+        
+            @Autowired
+            private KafkaProducer producer;
+        
+            /**
+             * 向kafka发送消息
+             * @return
+             */
+            @RequestMapping("sendMsg")
+            public String sendMsg() {
+                Random r = new Random();
+                int num = r.nextInt(100) + 1;
+                for (int i = 0; i < num; i++) {
+                    producer.sendMsg("hello kafka , i am producer " + i);
+                }
+                return "producer get total num is :" + num;
+            }
+        } 
