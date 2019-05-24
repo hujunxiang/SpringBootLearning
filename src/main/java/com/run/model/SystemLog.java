@@ -13,7 +13,7 @@ import java.util.Date;
 
 @Entity
 @Data
-@GenericGenerator(name = "jpa-uuid",strategy = "uuid")
+@GenericGenerator(name = "jpa-uuid",strategy = "org.hibernate.id.UUIDGenerator")
 public class SystemLog implements Serializable {
     /**
      * 主键
