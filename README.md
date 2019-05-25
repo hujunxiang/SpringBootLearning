@@ -904,3 +904,209 @@
                 return "producer get total num is :" + num;
             }
         } 
+       
+# 集成WebService（cxf-3.2.5）
+    开始集成的时候遇到各种问题，网上有各种各样的说法，后来发现是cxf版本的问题，所以选好cxf的版本很重要！！！
+
+   1.在pom.xml中引入依赖
+   
+        <!--import cxf -->
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+            <version>3.2.5</version>
+        </dependency>
+    
+  2.创建service
+        
+        (1)WebServiceService类：
+            @WebService(targetNamespace = "http://com.run.ws")
+                public interface WebServiceService {
+                    @WebMethod
+                    public String sayHello(String name);
+                }
+        
+        (2)WebServiceService2类：
+            @WebService(targetNamespace = "http://com.run.ws2")
+                public interface WebServiceService2 {
+                    @WebMethod
+                    public String sayHello2(String name);
+            }
+        
+        (3)WebServiceService3类：
+            @WebService(targetNamespace = "http://com.run.ws3")
+                public interface WebServiceService3 {
+                    @WebMethod
+                    public String sayHello3(String name);
+            }
+  3.创建service实现类：
+  
+        (1)WebServiceServiceImp类：
+            @Component
+            @WebService(
+                    targetNamespace = "http://com.run.ws",
+                    endpointInterface = "com.run.webservice.WebServiceService"
+            )
+            @Service
+            public class WebServiceServiceImp implements WebServiceService{
+                @Override
+                public String sayHello(String name) {
+                    return "hello " + name;
+                }
+            }
+            
+        (2)WebServiceServiceImp2类：
+              @Component
+              @WebService(
+                      targetNamespace = "http://com.run.ws2",
+                      endpointInterface = "com.run.webservice.WebServiceService2"
+              )
+              @Service
+              public class WebServiceServiceImp2 implements WebServiceService2{
+                  @Override
+                  public String sayHello2(String name) {
+                      return "hello " + name;
+                  }
+              }
+              
+        (3)WebServiceServiceImp3类：
+               @Component
+               @WebService(
+                       targetNamespace = "http://com.run.ws3",
+                       endpointInterface = "com.run.webservice.WebServiceService3"
+               )
+               @Service
+               public class WebServiceServiceImp3 implements WebServiceService3{
+                   @Override
+                   public String sayHello3(String name) {
+                       return "hello " + name;
+                   }
+               }
+               
+  4.创建cxf的config类：
+  
+        (1)CxfConfig类：
+            @Configuration
+            public class CxfConfig {
+                @Autowired
+                private WebServiceService webServiceService;
+                @Autowired
+                private WebServiceService2 webServiceService2;
+            
+                @Bean(name = Bus.DEFAULT_BUS_ID)
+                public SpringBus bus() {
+                    SpringBus bus = new SpringBus();
+                    bus.setId("version1");
+                    return bus;
+                }
+            
+                /**
+                 * 设置cxf访问路径，cxf默认的是services（可见ServletController），http://localhost:8081/services/ws?wsdl
+                 * 此处将其设置为myWs http://localhost:8081/myWs?ws.wsdl
+                 * @return
+                 */
+                @Bean
+                public ServletRegistrationBean cxfServlet(){
+                    CXFServlet servlet = new CXFServlet();
+                    servlet.setBus(bus());
+                    ServletRegistrationBean bean = new ServletRegistrationBean(servlet,"/myWs/*");
+                    bean.setName("bean1");
+                    return bean;
+                }
+            
+                @Bean
+                public Endpoint endpoint() {
+                    EndpointImpl endpoint = new EndpointImpl(bus(), webServiceService);
+                    endpoint.publish("/ws");
+                    return endpoint;
+                }
+            
+                @Bean
+                public Endpoint endpoint2(){
+                    EndpointImpl endpoint = new EndpointImpl(bus(), webServiceService2);
+                    endpoint.publish("/ws2");
+                    return endpoint;
+                }
+            }
+            
+        (2)CxfConfig3类：
+            @Configuration
+            public class CxfConfig3 {
+                @Autowired
+                private WebServiceService3 webServiceService3;
+            
+                @Bean
+                public SpringBus bus3() {
+                    SpringBus bus = new SpringBus();
+                    bus.setId("version3");
+                    return bus;
+                }
+            
+                /**
+                 * 设置cxf访问路径，cxf默认的是services（可见ServletController），http://localhost:8081/services/ws3?wsdl
+                 * 此处将其设置为myWs http://localhost:8081/myWs3?ws3.wsdl
+                 * @return
+                 */
+                @Bean
+                public ServletRegistrationBean cxfServlet3(){
+                    CXFServlet servlet3 = new CXFServlet();
+                    servlet3.setBus(bus3());
+                    ServletRegistrationBean bean = new ServletRegistrationBean(servlet3,"/myWs3/*");
+                    bean.setName("bean3");
+                    return bean;
+                }
+            
+                @Bean
+                public Endpoint endpoint3() {
+                    EndpointImpl endpoint = new EndpointImpl(bus3(), webServiceService3);
+                    endpoint.publish("/ws3");
+                    return endpoint;
+                }
+            }
+   
+  5.创建客户端测试：
+  
+        @RestController
+        @RequestMapping("ws")
+        public class WebServiceController {
+        
+            @RequestMapping("callWs/{message}")
+            public String callWs(@PathVariable String message){
+                String wsUrl = "http://localhost:8081/myWs/ws?wsdl";
+                JaxWsDynamicClientFactory clientFactory = JaxWsDynamicClientFactory.newInstance();
+                Client client = clientFactory.createClient(wsUrl);
+                Object[] objs = new Object[0];
+                try {
+                    objs = client.invoke("sayHello",message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return objs[0].toString();
+            }
+            @RequestMapping("callWs2/{message}")
+            public String callWs2(@PathVariable String message){
+                String wsUrl = "http://localhost:8081/myWs/ws2?wsdl";
+                JaxWsDynamicClientFactory clientFactory = JaxWsDynamicClientFactory.newInstance();
+                Client client = clientFactory.createClient(wsUrl);
+                Object[] objs = new Object[0];
+                try {
+                    objs = client.invoke("sayHello2",message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return objs[0].toString();
+            }
+            @RequestMapping("callWs3/{message}")
+            public String callWs3(@PathVariable String message){
+                String wsUrl = "http://localhost:8081/myWs3/ws3?wsdl";
+                JaxWsDynamicClientFactory clientFactory = JaxWsDynamicClientFactory.newInstance();
+                Client client = clientFactory.createClient(wsUrl);
+                Object[] objs = new Object[0];
+                try {
+                    objs = client.invoke("sayHello3",message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return objs[0].toString();
+            }
+        }

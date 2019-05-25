@@ -103,7 +103,12 @@
             <artifactId>spring-kafka</artifactId>
             <version>2.2.5.RELEASE</version>
         </dependency>
-
+        <!--import cxf -->
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+            <version>3.2.5</version>
+        </dependency>
     </dependencies>
 
     <build>
