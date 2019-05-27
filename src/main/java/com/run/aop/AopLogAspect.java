@@ -41,7 +41,7 @@ public class AopLogAspect {
     }
 
     /**
-     * 定义advice，可直接将拦截规则（切点）作为参数
+     * 定义advice，可直接将拦截规则（切点）作为参数，也可以直接使用拦截规则，如：execution("com.run.controller.*(..))
      * @param joinPoint
      */
     @After("controllerAspect()")
