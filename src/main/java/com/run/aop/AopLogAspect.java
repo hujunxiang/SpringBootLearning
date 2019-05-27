@@ -22,6 +22,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 定义切面类
+ */
 @Aspect
 @Configuration
 public class AopLogAspect {
@@ -30,10 +33,17 @@ public class AopLogAspect {
     @Autowired
     private SystemLogDao systemLogDao;
 
+    /**
+     * 定义切点
+     */
     @Pointcut("@annotation(com.run.aop.AopLog)")
     public void controllerAspect() {
     }
 
+    /**
+     * 定义advice，可直接将拦截规则（切点）作为参数
+     * @param joinPoint
+     */
     @After("controllerAspect()")
     public void doAfter(JoinPoint joinPoint) {
         try {
