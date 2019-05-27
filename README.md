@@ -921,23 +921,23 @@
         
         (1)WebServiceService类：
             @WebService(targetNamespace = "http://com.run.ws")
-                public interface WebServiceService {
-                    @WebMethod
-                    public String sayHello(String name);
-                }
+            public interface WebServiceService {
+                @WebMethod
+                public String sayHello(String name);
+            }
         
         (2)WebServiceService2类：
             @WebService(targetNamespace = "http://com.run.ws2")
-                public interface WebServiceService2 {
-                    @WebMethod
-                    public String sayHello2(String name);
+            public interface WebServiceService2 {
+                @WebMethod
+                public String sayHello2(String name);
             }
         
         (3)WebServiceService3类：
             @WebService(targetNamespace = "http://com.run.ws3")
-                public interface WebServiceService3 {
-                    @WebMethod
-                    public String sayHello3(String name);
+            public interface WebServiceService3 {
+                @WebMethod
+                public String sayHello3(String name);
             }
   3.创建service实现类：
   
