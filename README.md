@@ -1110,3 +1110,23 @@
                 return objs[0].toString();
             }
         }
+        
+# banner管理
+
+  1.替换默认banner
+  
+    在src/main/resources目录下新建banner.txt
+    在http://patorjk.com/software/taag网站里自定义显示的banner信息，然后将生成的内容复制到banner.txt中即可
+    
+  2.关闭banner
+ 
+    程序的正常启动可以使用：
+        SpringApplication.run(DemoApplication.class, args);
+    也可以用下面代码替代：
+        SpringApplication app = new SpringApplication(DemoApplication.class);
+        app.setBannerMode(Banner.Mode.OFF);//关闭banner
+        app.run(args); 
+    或者：
+        new SpringApplicationBuilder(DemoApplication.class)
+            .bannerMode(Banner.Mode.OFF)//关闭banner
+            .run(args);    
